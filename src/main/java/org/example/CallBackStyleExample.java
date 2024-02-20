@@ -1,5 +1,7 @@
 package main.java.org.example;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
 
 public class CallBackStyleExample {
@@ -9,22 +11,13 @@ public class CallBackStyleExample {
 
         f(2, (int x) -> {
             result.left = x;
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            System.out.println("f(): " + result.left + result.right);
+            System.out.println("f(): " + (result.left + result.right));
         });
 
         g(3, (int y) -> {
             result.right = y;
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            System.out.println("g(): "+result.left + result.right);
+
+            System.out.println("g(): "+(result.left + result.right));
         });
 
         System.out.println("Hello world!");
@@ -32,14 +25,30 @@ public class CallBackStyleExample {
 
     static void f(int x, IntConsumer dealWithResult) throws Exception{
 
-        dealWithResult.andThen(value -> System.out.println("first then" + value+1))
-                .andThen(value -> System.out.println("2nd then " + value+1))
-                .accept(x*2);
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            dealWithResult.accept(x*2);
+        });
+        executorService.shutdown();
     }
 
     static void g(int y, IntConsumer dealWithResult) throws Exception{
 
-        dealWithResult.accept(y*2);
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            dealWithResult.accept(y*2);
+        });
+        executorService.shutdown();
     }
 
     public static class Result {
